@@ -1,5 +1,6 @@
 // Basic ESP8266 wifi functions
 #include <ESP8266WiFi.h>
+#define ESP_RESET ESP.reset()
 // DNS Server
 #include <DNSServer.h>
 
@@ -17,7 +18,7 @@
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
 
-#define ESP_RESET ESP.reset()
+typedef RowMajorLayout MyPanelLayout;
 
 
 void setup() {
