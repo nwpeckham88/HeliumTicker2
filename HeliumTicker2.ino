@@ -24,6 +24,10 @@ const uint8_t PanelWidth = 32;  // 32 pixel x 8 pixel matrix of leds
 const uint8_t PanelHeight = 8;
 const uint16_t PixelCount = PanelWidth * PanelHeight;
 
+NeoTopology<MyPanelLayout> topo(PanelWidth, PanelHeight);
+
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+
 void setup() {
   // put your setup code here, to run once:
 
