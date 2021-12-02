@@ -4,7 +4,7 @@
 // DNS Server
 #include <DNSServer.h>
 
-//Async WebServer 
+//Async WebServer
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
@@ -29,7 +29,17 @@ NeoTopology<MyPanelLayout> topo(PanelWidth, PanelHeight);
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
 
 void setup() {
-  // put your setup code here, to run once:
+  Serial.begin(115200);
+  while (!Serial); // wait for serial attach
+
+  Serial.println();
+  Serial.println("Initializing strip.");
+
+  strip.Begin();
+  strip.Show();
+
+  Serial.println();
+  Serial.println("Running...");
 
 }
 
