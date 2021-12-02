@@ -13,6 +13,8 @@
 // Event scheduling
 #include <Ticker.h>
 
+// WS2812 Libraries
+#include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
 
 #define ESP_RESET ESP.reset()
