@@ -18,16 +18,28 @@
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
 
-typedef RowMajorLayout MyPanelLayout;
 
+/* 
+ *  Definition of the LED Panel
+ */
 const uint8_t PanelWidth = 32;  // 32 pixel x 8 pixel matrix of leds
 const uint8_t PanelHeight = 8;
 const uint16_t PixelCount = PanelWidth * PanelHeight;
 
+const uint16_t PanelLeft = 0;
+const uint16_t PanelRight = PanelWidth - 1;
+const uint16_t PanelTop = 0;
+const uint16_t PanelBottom = PanelHeight - 1;
+
+typedef RowMajorLayout MyPanelLayout;
 NeoTopology<MyPanelLayout> topo(PanelWidth, PanelHeight);
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+/* 
+ *  End definition of the LED Panel
+ */
 
+ 
 void setup() {
   Serial.begin(115200);
   while (!Serial); // wait for serial attach
@@ -45,5 +57,10 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+      strip.SetPixelColor(topo.Map(left, top), white);
+    strip.SetPixelColor(topo.Map(right, top), red);
+    strip.SetPixelColor(topo.Map(right, bottom), green);
+    strip.SetPixelColor(topo.Map(left, bottom), blue);
+    strip.Show();
 
 }
