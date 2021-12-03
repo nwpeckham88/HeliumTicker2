@@ -49,10 +49,12 @@ Atm_esp8266_httpc_simple heliumClient, binanceClient;
 /*
    API Defines
 */
-#define HELIUM_ACCOUNT 1
-#define HELIUM_HOTSPOT 2
-#define HELIUM_REWARDS 4
-#define HELIUM_
+#define HELIUM_ACCOUNT        1
+#define HELIUM_HOTSPOT        2
+#define HELIUM_DAILY_REWARDS  4
+#define HELIUM_30_DAYS        8
+
+
 
 /*
    End API Defines
@@ -72,6 +74,17 @@ void setup() {
   Serial.println();
   Serial.println("Running...");
 
+  wifi.begin( ap_ssid, ap_password )
+    .led( LED_BUILTIN, true ) // Esp8266 built in led shows wifi status
+    .onChange( true, [] ( int idx, int v, int up  ) {
+      Serial.print( "Connected to Wifi, browse to http://");
+      Serial.println( wifi.ip() );
+      server.start(); // Time to start the web server
+    })
+    .onChange( false, [] ( int idx, int v, int up  ) {
+      Serial.println( "Lost Wifi connection");
+    })
+    .start();
 
   heliumClient.begin( "https://api.helium.io/v1/" )
   .onStart( []( int idx, int v, int ) {
