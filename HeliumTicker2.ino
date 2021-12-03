@@ -1,5 +1,10 @@
 // Basic ESP8266 wifi functions
 #include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+
+
+// Reset ESP8266 define
 #define ESP_RESET ESP.reset()
 
 // Logging
@@ -7,6 +12,9 @@
 
 // ASync WiFi Manager
 #include <ESPAsync_WiFiManager.h>               //https://github.com/khoih-prog/ESPAsync_WiFiManager
+
+// OTA Updates
+#include <AsyncElegantOTA.h>
 
 /*
    DRD Include and config Defines
@@ -46,7 +54,7 @@ const uint16_t PanelBottom = PanelHeight - 1;
 typedef RowMajorLayout MyPanelLayout;
 NeoTopology<MyPanelLayout> topo(PanelWidth, PanelHeight);
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount);
 /*
     End definition of the LED Panel
 */
@@ -64,6 +72,27 @@ bool initialConfig =    false;
    End DRD and DNS define
 */
 
+/*
+ * Basic color definitions
+ */
+#define colorSaturation 128
+RgbColor red(colorSaturation, 0, 0);
+RgbColor green(0, colorSaturation, 0);
+RgbColor blue(0, 0, colorSaturation);
+RgbColor white(colorSaturation);
+RgbColor black(0);
+
+HslColor hslRed(red);
+HslColor hslGreen(green);
+HslColor hslBlue(blue);
+HslColor hslWhite(white);
+HslColor hslBlack(black);
+
+/*
+ * End basic color definitions 
+ */
+
+ 
 void setup() {
   Serial.begin(115200);
   // Pass log level, whether to show log level, and print interface.
@@ -85,7 +114,7 @@ void setup() {
     initialConfig = true;
   }
   if (initialConfig) {
-    Log.println(F("Starting Config Portal")); 
+    Log.infoln(F("Starting Config Portal")); 
 
     ESPAsync_WiFiManager ESPAsync_wifiManager(&webServer, &dnsServer, "ConfigOnDoubleReset");
     //ESPAsync_wifiManager.setConfigPortalChannel(0);
@@ -106,9 +135,9 @@ void setup() {
     Log.infoln(F("Local IP: "));
     Log.infoln(WiFi.localIP());
   }
+  AsyncElegantOTA.begin(&webServer);    // Start ElegantOTA
 
-
-  Log.infoln();
+  Log.infoln("");
   Log.infoln("Initializing strip.");
 
   strip.Begin();
