@@ -1,18 +1,32 @@
 // Basic ESP8266 wifi functions
 #include <ESP8266WiFi.h>
 #define ESP_RESET ESP.reset()
+
+// Logging
+#include <ArduinoLog.h>
+
+// ASync WiFi Manager
+#include <ESPAsync_WiFiManager.h>               //https://github.com/khoih-prog/ESPAsync_WiFiManager
+
+/*
+   DRD Include and config Defines
+*/
+#define USE_LITTLEFS            true
+#define ESP_DRD_USE_LITTLEFS    true
+#define DRD_TIMEOUT             10
+#define DRD_ADDRESS             0
+#include <ESP_DoubleResetDetector.h>            //https://github.com/khoih-prog/ESP_DoubleResetDetector
+
+/*
+   End DRD config defines
+*/
+
 // DNS Server
 #include <DNSServer.h>
 
 // WS2812 Libraries
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBus.h>
-
-/*
-   Automaton State Machine library
-*/
-#include <Automaton.h>
-#include <Atm_esp8266.h>
 
 // Sensitive information (ssid, password)
 #include "sensitive.h"
@@ -38,68 +52,72 @@ NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
 */
 
 /*
-   State machines
+   DRD and DNS define and config variables
 */
-Atm_esp8266_httpc_simple heliumClient, binanceClient;
+DoubleResetDetector*    drd;
+AsyncWebServer          webServer(80);
+DNSServer               dnsServer;
+
+bool initialConfig =    false;
 
 /*
-   End state machines definition
-*/
-
-/*
-   API Defines
-*/
-#define HELIUM_ACCOUNT        1
-#define HELIUM_HOTSPOT        2
-#define HELIUM_DAILY_REWARDS  4
-#define HELIUM_30_DAYS        8
-
-
-
-/*
-   End API Defines
+   End DRD and DNS define
 */
 
 void setup() {
   Serial.begin(115200);
+  // Pass log level, whether to show log level, and print interface.
+  // Available levels are:
+  // LOG_LEVEL_SILENT, LOG_LEVEL_FATAL, LOG_LEVEL_ERROR, LOG_LEVEL_WARNING, LOG_LEVEL_INFO, LOG_LEVEL_TRACE, LOG_LEVEL_VERBOSE
+  // Note: if you want to fully remove all logging code, uncomment #define DISABLE_LOGGING in Logging.h
+  //       this will significantly reduce your project size
+
+  Log.begin(LOG_LEVEL_VERBOSE, &Serial);
   while (!Serial); // wait for serial attach
 
-  Serial.println();
-  Serial.println("Initializing strip.");
+  if (WiFi.SSID() == "") {
+    Log.infoln(F("No AP credentials"));
+    initialConfig = true;
+  }
+  drd = new DoubleResetDetector(DRD_TIMEOUT, DRD_ADDRESS);
+  if (drd->detectDoubleReset()) {
+    Log.infoln(F("DRD"));
+    initialConfig = true;
+  }
+  if (initialConfig) {
+    Log.println(F("Starting Config Portal")); 
+
+    ESPAsync_WiFiManager ESPAsync_wifiManager(&webServer, &dnsServer, "ConfigOnDoubleReset");
+    //ESPAsync_wifiManager.setConfigPortalChannel(0);
+    ESPAsync_wifiManager.setConfigPortalTimeout(0);
+    if (!ESPAsync_wifiManager.startConfigPortal()) {
+      Log.infoln(F("Not connected to WiFi"));
+    }
+    else {
+      Log.infoln(F("connected"));
+    }
+  }
+  int connRes = WiFi.waitForConnectResult();
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Log.infoln(F("Failed to connect"));
+  }
+  else {
+    Log.infoln(F("Local IP: "));
+    Log.infoln(WiFi.localIP());
+  }
+
+
+  Log.infoln();
+  Log.infoln("Initializing strip.");
 
   strip.Begin();
   strip.ClearTo(black); // Clear strip
   strip.Show();
-
-  Serial.println();
-  Serial.println("Running...");
-
-  wifi.begin( ap_ssid, ap_password )
-    .led( LED_BUILTIN, true ) // Esp8266 built in led shows wifi status
-    .onChange( true, [] ( int idx, int v, int up  ) {
-      Serial.print( "Connected to Wifi, browse to http://");
-      Serial.println( wifi.ip() );
-      server.start(); // Time to start the web server
-    })
-    .onChange( false, [] ( int idx, int v, int up  ) {
-      Serial.println( "Lost Wifi connection");
-    })
-    .start();
-
-  heliumClient.begin( "https://api.helium.io/v1/" )
-  .onStart( []( int idx, int v, int ) {
-    switch ( v ) {
-      case 0:
-        client.get( "/on" );
-        return;
-      case 1:
-        client.get( "/off" );
-        return;
-    }
-  });
 }
 
 void loop() {
+  drd->loop();
   // put your main code here, to run repeatedly:
   strip.SetPixelColor(topo.Map(left, top), white);
   strip.SetPixelColor(topo.Map(right, top), red);
